@@ -15,9 +15,9 @@ Algo:
 4. Make an attached disk the only boot device if `--noboot` is not specified (uses `qm set`);
 5. Show summary (uses `qm config`).
 
-Examle:
+Examlpe:
 ```
-user@test:# sudo ./pve-add-disk.sh 999 disk-image.qcow2 pvestorage
+user@test:$ sudo ./pve-add-disk.sh 999 disk-image.qcow2 pvestorage
 vmid    : 999
 file    : disk-image.qcow2
 storage : pvestorage
