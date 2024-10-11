@@ -21,21 +21,21 @@ for srv in corosync pveproxy pvedaemon pvestatd; do
 	log_command "systemctl stop $srv"
 done
 
-echo "== Suspending/stopping VMs... =================================================="
+echo "== Suspending/shutdowning/stopping(on error) VMs... ============================"
 
 VMLIST=$(qm list --full | grep running)
 echo "$VMLIST"
-echo "$VMLIST" | while read f1 f2 f3 f4 f5 f6; do 
+echo "$VMLIST" | while read -r f1 f2 f3 f4 f5 f6; do 
 	if [[ ! "$f1" == "" ]]; then 
 		echo "[VM#$f1]-----------------------------------"
 		log_command "pgrep -f 'task .*:vzdump:$f1:.*' |  xargs -r kill" "...Kill backup tasks (if any)" "suppress"
 		log_command "qm unlock $f1" "........Unlock"
 
 		NEVER_SUSPEND_TAG=$(qm config $f1 | grep -E '^tags: *(|.+;)never-suspend(|;.+)$')
-		if [[ ${#NEVER_SUSPEND_TAG} -eq 0 ]]; then
-			log_command "qm suspend $f1 --todisk" "HYBERNATE: "; res=$?
-		else
+		if [[ "$NEVER_SUSPEND_TAG" ]]; then
 			log_command "qm shutdown $f1" "SHUTDOWN: "; res=$?
+		else
+			log_command "qm suspend $f1 --todisk" "HYBERNATE: "; res=$?
 		fi
 		if [[ "$res" -ne 0 ]]; then
 			log_command "qm stop $f1 -overrule-shutdown 1" "ERROR(STOP): "; res=$?
