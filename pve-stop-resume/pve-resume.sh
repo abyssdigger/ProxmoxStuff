@@ -26,7 +26,7 @@ log_command "sysctl -w vm.dirty_ratio=$DIRTYR" "WRITE-CACHE-ENABLE($DIRTYR): "
 
 echo "== Starting pve main services... ==============================================="
 
-for srv in pve-cluster pve-ha-lrm pve-ha-crm pve-firewall; do
+for srv in qemu-server vz pve-cluster pve-ha-lrm pve-ha-crm pve-firewall; do
         log_command "systemctl start $srv"
 done
 
