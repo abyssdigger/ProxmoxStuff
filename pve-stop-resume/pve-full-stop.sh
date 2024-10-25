@@ -45,7 +45,7 @@ done
 
 echo "== Stopping pve main services... ==============================================="
 
-for srv in pve-firewall pve-ha-crm pve-ha-lrm pve-cluster; do
+for srv in pve-firewall pve-ha-crm pve-ha-lrm pve-cluster vz qemu-server; do
 	log_command "systemctl stop $srv"
 done
 
