@@ -1,0 +1,10 @@
+[Unit]
+Description='Daily backups to Proxmox backup server'
+Requires=pbsrootbackup.service
+
+[Timer]
+Unit=pbsrootbackup.service
+OnCalendar=*-*-* 03:30:00 # set start time here
+
+[Install]
+WantedBy=timers.target	
