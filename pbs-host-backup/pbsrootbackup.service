@@ -1,0 +1,18 @@
+[Unit]
+Description="Backup to Proxmox backup server"
+Wants=pbsrootbackup.timer
+
+[Service]
+Type=simple
+RemainAfterExit=no
+Environment=PBS_FINGERPRINT='XX:XX:...:XX' # fingerprint copypaste from certificate details on pbs-server.nowhere.null:8007
+Environment=PBS_REPOSITORY='hostbackuper@pbs@pbs-server.nowhere.null:local' # Connection string
+Environment=PBS_PASSWORD='XXXXXXXXXXXXXXXXXXX' # Passwd for hostbackuper
+
+ExecStart=/usr/bin/proxmox-backup-client backup root.pxar:/ --include-dev /etc/pve --exclude /var/lib/vz -ns HostNS
+#                              backup name on pbs ^                         ^                    ^             ^ namespace (if needed)
+#        is a mount point so have to be included manualy or will be skipped ^                    ^
+#                                         templates, VMs, backups etc - usualy no need to backup ^
+
+[Install]
+WantedBy=multi-user.target
