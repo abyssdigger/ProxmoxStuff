@@ -49,7 +49,7 @@ echo "$VMLIST" | while read -r f1 f2 f3 f4 f5 f6; do
 		fi
                 log_command "qm unlock $f1" "........Unlock"
                 log_command "qm start $f1" "START: "; res=$?
-		log_command "qm guest exec $f1 -- hwclock -s" "Clock adjust: " # Adjust time on linux VM, /home/clockadjust.sh has to be smth like `hwclock -s`
+		log_command "qm guest exec $f1 -- hwclock -s" "Clock adjust: " # Adjust time on linux VM (Proxmox/qemu bug with no VM time adjustment after resume from hybernate)
         fi;
 done
 echo "--------------------------------------------"
