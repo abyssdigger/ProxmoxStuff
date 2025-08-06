@@ -1,11 +1,10 @@
 #!/bin/bash
 
+# Source: https://github.com/abyssdigger/ProxmoxStuff/tree/main/pve-vm-rename/pve-vm-rename.sh
 # Copyright 2025 abyssdigger
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License. 
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
 # You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-#
-# Source: https://github.com/abyssdigger/ProxmoxStuff/tree/main/pve-vm-rename
+
 
 ECP="--exec"     # Option to exec commands if all VM disk storage types are supported
 ECY="--exec-yes" # Option to exec commands even if some VM disk storage types are unknown
@@ -48,13 +47,13 @@ else
 	echo "execute (run commands to rename VM)."
 fi
 echo "---------------------------------------------------------------------------------------"
-echo "Check VM and VMID preconditons:"
+echo "Check VM and VMID preconditions:"
 
 # Check VM state and new VMID availability
 N=0
 
 ((N++))
-echo -n "[#$N] check VM existance: <qm status $VMID_OLD>: "
+echo -n "[#$N] check VM existence: <qm status $VMID_OLD>: "
 VM_STATUS=$(qm status "$VMID_OLD" 2>&1);
 RES="$?"
 if [ "$RES" -ne 0 ]; then
@@ -123,25 +122,25 @@ while read -r line ; do
 		LOOKUP="pool: "
 		PLACE=$(echo "$STOR_DATA" | grep -E "^$LOOKUP")
 		PLACE="${PLACE#$LOOKUP}"
-		DEVIDER=" "
+		DIVIDER=" "
 		NEWNAME="${DATA[1]/$VMID_OLD/$VMID_NEW}"
 		COMMAND="rbd mv -p"
 	elif [ "$STOR_TYPE" == "dir" ]; then
 		LOOKUP="path: "
 		PLACE=$(echo "$STOR_DATA" | grep -E "^$LOOKUP")
 		PLACE="${PLACE#$LOOKUP}/images"
-		DEVIDER="/"
+		DIVIDER="/"
 		if [[ ! " ${DIRS_TO_RENAME[*]} " =~ [[:space:]]"$PLACE"[[:space:]] ]]; then
   			DIRS_TO_RENAME+=( "$PLACE" )
 		fi
 		OLDFILE="${DATA[1]#$VMID_OLD}"
-		NEWNAME="$PLACE$DEVIDER$VMID_OLD${OLDFILE/$VMID_OLD/$VMID_NEW}"
+		NEWNAME="$PLACE$DIVIDER$VMID_OLD${OLDFILE/$VMID_OLD/$VMID_NEW}"
 		#FILENAME="${DATA[1]#$VMID_OLD}"
-		#NEWNAME="$PLACE$DEVIDER$VMID_OLD${FILENAME/$VMID_OLD/$VMID_NEW}"
+		#NEWNAME="$PLACE$DIVIDER$VMID_OLD${FILENAME/$VMID_OLD/$VMID_NEW}"
 		COMMAND="mv -f"
 	else
 		PLACE="UNKNOWN STORAGE TYPE"
-		DEVIDER=" FOR "
+		DIVIDER=" FOR "
 		NEWNAME=""
 		COMMAND="echo '*** CHANGE DISK STORAGE MANUALLY ***'; exit 1 #"
 		if [ "$EXECUTOR" == "$ECP" ]; then
@@ -149,7 +148,7 @@ while read -r line ; do
 			RES_TOTAL=100
 		fi
 	fi
-	COMMAND_TO_EXEC="$COMMAND $PLACE$DEVIDER${DATA[1]} $NEWNAME"
+	COMMAND_TO_EXEC="$COMMAND $PLACE$DIVIDER${DATA[1]} $NEWNAME"
 	COMMAND_LIST+=(  "$COMMAND_TO_EXEC"  )
 	COMMAND_DESC+=( ["$COMMAND_TO_EXEC"]="Rename virtual disk $NAME [$STOR_TYPE:${DATA[0]}]" )
 

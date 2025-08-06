@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function log_command() { # <command> <prefix> <suppress comand text>
+function log_command() { # <command> <prefix> <suppress command text>
 	echo -n "$2"; [[ "$3" == "" ]] && echo -n "[$1]"; echo -n "..."
 	OUTPUT=$(eval "$1" 2>&1)
 	RES=$?

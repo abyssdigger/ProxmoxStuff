@@ -1,0 +1,16 @@
+{
+    "cSpell.ignoreWords": [
+        "NEWNAME",
+        "VMID",
+        "corosync",
+        "pvedaemon",
+        "pveproxy",
+        "pvescheduler",
+        "pvesh",
+        "pvestatd",
+        "qcow",
+        "todisk",
+        "vmlist",
+        "vzdump"
+    ]
+}
