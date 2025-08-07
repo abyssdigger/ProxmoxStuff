@@ -2,12 +2,12 @@
 
 # Source: https://github.com/abyssdigger/ProxmoxStuff/tree/main/pve-vm-rename/pve-vm-rename.sh
 # Copyright 2025 abyssdigger
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. 
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
 
-ECP="--exec"     # Option to exec commands if all VM disk storage types are supported
-ECY="--exec-yes" # Option to exec commands even if some VM disk storage types are unknown
+ECP="--exec"	# Option to exec commands if all VM disk storage types are supported
+ECY="--force"	# Option to exec commands even if some VM disk storage types are unknown
 
 # Help
 if [ $# -gt 0 ] && ( [ $1 == "-h" ] || [ $1 == "--help" ] ); then
@@ -15,10 +15,10 @@ if [ $# -gt 0 ] && ( [ $1 == "-h" ] || [ $1 == "--help" ] ); then
 	echo "Change Proxmox virtual machine's VMID from <old-vmid> to <new-vmid>"
 	echo "<old-vmid> (integer 1 - N): The ID of an existing stopped VM."
 	echo "<new-vmid> (integer 1 - N): New ID to change to. Must not be used by existing cluster VMs."
-	echo "Extra options:"	
+	echo "Extra options:"
  	echo "  $ECP: prepare and execute commands to rename VMID."
 	echo "  $ECY: prepare and execute commands even if unsupported storage found (DANGEROUS!)."
-	echo "Without extra options just prepares and lists commands to rename VM (ready to copy-paste)."	
+	echo "Without extra options just prepares and lists commands to rename VM (ready to copy-paste)."
 	echo
 	echo "Help (this one): "$(basename "$0")" -h"
 	echo
