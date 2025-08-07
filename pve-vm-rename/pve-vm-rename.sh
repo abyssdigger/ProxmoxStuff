@@ -42,6 +42,12 @@ else
         exit 64
 fi
 
+# Check if runs under root/sudo
+if [[ $EUID -ne 0 ]]; then
+	echo "This script must be run as root (try to run with sudo)"
+	exit 126
+fi
+
 echo -n "Job started: rename VM $VMID_OLD to $VMID_NEW, mode: "
 if [ "${#EXECUTOR}" -eq 0 ]; then
 	echo "dry run (list commands to rename VM)."
