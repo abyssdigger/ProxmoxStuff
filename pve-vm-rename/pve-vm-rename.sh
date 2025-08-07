@@ -73,25 +73,27 @@ else
 fi
 
 ((N++))
-echo -n "[$N] check VM status (must be stopped): "
-if [ "$VM_STATUS" != "status: stopped" ]; then
-	echo "ERROR, VM $VMID_OLD $VM_STATUS"
+echo -n "[$N] check new VMID is available ($VMID_NEW is not in /etc/pve/.vmlist): "
+CMD='grep -E "\"'"$VMID_NEW"'\":" /etc/pve/.vmlist 2>&1 | grep -oE "^.+\{.+[^\}]\}" 2>&1'
+VMID_CHECK=$(eval $CMD);
+RES="$?"
+if [ "$RES" -eq 0 ]; then
+	echo "ERROR, found VM with VMID=$VMID_NEW: "
+	echo "$VMID_CHECK"
 	exit "$(expr 100 + $N)"
 else
 	echo "OK."
 fi
 
 ((N++))
-echo -n "[$N] check new VMID is available ($VMID_NEW is not in /etc/pve/.vmlist): "
-CMD='grep -E "\"'"$VMID_NEW"'\":" /etc/pve/.vmlist 2>&1 | grep -oE "^.+\{.+[^\}]\}" 2>&1'
-VM_STATUS=$(eval $CMD);
-RES="$?"
-if [ "$RES" -eq 0 ]; then
-	echo "ERROR, found VM with VMID=$VMID_NEW: "
-	echo "$VM_STATUS"
-	exit "$(expr 100 + $N)"
-else
-	echo "OK."
+if [ "${#EXECUTOR}" -ne 0 ]; then
+	echo -n "[$N] check VM status (must be stopped): "
+	if [ "$VM_STATUS" != "status: stopped" ]; then
+		echo "ERROR, VM $VMID_OLD $VM_STATUS"
+		exit "$(expr 100 + $N)"
+	else
+		echo "OK."
+	fi
 fi
 
 DIRS_TO_RENAME=()
@@ -202,6 +204,7 @@ if [ "${#EXECUTOR}" -ne 0 ] ; then
 	echo "Executing commands to rename VM (exit code will show number of errors on execution):"
 else
 	echo "List commands to rename VM:"
+	echo "#### CHECK VM IS STOPPED BEFORE EXECUTION!"
 fi
 
 for each in "${COMMAND_LIST[@]}"; do

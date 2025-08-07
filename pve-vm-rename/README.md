@@ -20,19 +20,20 @@ Run `pve-vm-rename.sh --help` for more information.
 
 ## Limitations and cautions
 
-- Only RBD(ceph) and DIR storage types are supported. 
+- Only RBD(ceph) and DIR storage types are supported.
 - Virtual disks on other storage types like LVM or ZFS should be moved to the new VMID manually (some ideas can be found on this Proxmox forum threads: [Changing VMID of a VM](https://forum.proxmox.com/threads/changing-vmid-of-a-vm.63161) and [How to rename a vm?](https://forum.proxmox.com/threads/how-to-rename-a-vm.9680)).
 - Script with `--force` parameter will change VMID so disks on unsupported storages may become inaccessible for VM.
 
 ## Algo
 
 1. Checks VM and VMID preconditions:
-    - VM's state (exists on current node and stopped);
+    - VM's existence (on current node);
     - new ID availability (cluster-wide);
+    - if in _execute_ mode - VM's state (stopped);
 1. Discovers VM's hard disks and on each disk:
     - gets info on disk's storages;
     - prepares commands for correct disk binding on VMID change;
-1. Prepares commands to changes dir/file names: 
+1. Prepares commands to changes dir/file names:
     - ceph and dir storages;
     - firewall rules file;
     - VM config file;
@@ -56,8 +57,7 @@ Job started: rename VM 490777 to 490888, mode: dry run (list commands to rename 
 ---------------------------------------------------------------------------------------
 Check VM and VMID preconditions:
 [1] check VM existence: <qm status 490777>: OK.
-[2] check VM status (must be stopped): OK.
-[3] check new VMID is available (490888 is not in /etc/pve/.vmlist): OK.
+[2] check new VMID is available (490888 is not in /etc/pve/.vmlist): OK.
 ---------------------------------------------------------------------------------------
 Parse /etc/pve/qemu-server/490777.conf for virtual disks:
 > scsi0 cephvm:vm-490777-disk-0: [rbd:cephvm].
@@ -73,6 +73,7 @@ Prepare command list to execute:
 > commands to rename dirs named on VM... OK.
 ---------------------------------------------------------------------------------------
 List commands to rename VM:
+#### CHECK VM IS STOPPED BEFORE EXECUTION!
 #### Rename virtual disk scsi0 [rbd:cephvm]
 rbd mv -p cephvm vm-490777-disk-0 vm-490888-disk-0
 #### Rename virtual disk scsi1 [dir:local]
@@ -116,15 +117,14 @@ Job done without any changes (run listed commands manually or use --exec to exec
       VMID NAME                 STATUS     MEM(MB)    BOOTDISK(GB) PID
      15253 pbs-test.tmp         running    32768             32.00 7123
      15254 pve-test.tmp         running    65536             50.00 17319
-     490777 TestRename           stopped    4096              32.00 0
-    999998 Test-N-Resque-02     stopped    2048              32.00 0
+    490777 TestRename           stopped    4096              32.00 0
 # ./pve-vm-rename.sh 490777 490888 --exec
 Job started: rename VM 490777 to 490888, mode: execute (run commands to rename VM).
 ---------------------------------------------------------------------------------------
 Check VM and VMID preconditions:
 [1] check VM existence: <qm status 490777>: OK.
-[2] check VM status (must be stopped): OK.
-[3] check new VMID is available (490888 is not in /etc/pve/.vmlist): OK.
+[2] check new VMID is available (490888 is not in /etc/pve/.vmlist): OK.
+[3] check VM status (must be stopped): OK.
 ---------------------------------------------------------------------------------------
 Parse /etc/pve/qemu-server/490777.conf for virtual disks:
 > scsi0 cephvm:vm-490777-disk-0: [rbd:cephvm].
@@ -170,11 +170,12 @@ status: running
       VMID NAME                 STATUS     MEM(MB)    BOOTDISK(GB) PID
      15253 pbs-test.tmp         running    32768             32.00 7123
      15254 pve-test.tmp         running    65536             50.00 17319
-    490888 TestRename           running    4096              32.00 3527960
+    490888 TestRename           running    4096              32.00 3640780
 # ./pve-vm-rename.sh 490888 490777 --exec
 Job started: rename VM 490888 to 490777, mode: execute (run commands to rename VM).
 ---------------------------------------------------------------------------------------
 Check VM and VMID preconditions:
 [1] check VM existence: <qm status 490888>: OK.
-[2] check VM status (must be stopped): ERROR, VM 490888 status: running
+[2] check new VMID is available (490777 is not in /etc/pve/.vmlist): OK.
+[3] check VM status (must be stopped): ERROR, VM 490888 status: running
 ```
