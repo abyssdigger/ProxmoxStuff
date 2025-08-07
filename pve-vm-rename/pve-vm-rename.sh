@@ -14,15 +14,17 @@ if [ $# -gt 0 ] && ( [ $1 == "-h" ] || [ $1 == "--help" ] ); then
 	echo "Usage: "$(basename "$0")" <old-vmid> <new-vmid> [$ECP|$ECY]"
 	echo "Change Proxmox virtual machine's VMID from <old-vmid> to <new-vmid>"
 	echo "<old-vmid> (integer 1 - N): The ID of an existing stopped VM."
-	echo "<new-vmid> (integer 1 - N): New ID to change to. Must be unused by existing VMs."
-	echo "$ECP: run commands to rename VMID (perform all checks and show commands if not specified)."
-	echo "$ECY: run commands even if unsupported storage found (DANGEROUS!)."
+	echo "<new-vmid> (integer 1 - N): New ID to change to. Must not be used by existing cluster VMs."
+	echo "Extra options:"	
+ 	echo "  $ECP: prepare and execute commands to rename VMID."
+	echo "  $ECY: prepare and execute commands even if unsupported storage found (DANGEROUS!)."
+	echo "Without extra options just prepares and lists commands to rename VM (ready to copy-paste)."	
 	echo
 	echo "Help (this one): "$(basename "$0")" -h"
 	echo
 	echo " ******************************************************************"
 	echo " * ATTENTION! Only RBD(ceph) and Dir storage types are supported! *"
-	echo " *  Virtual disks on LVM jr ZFS storages may become inaccessible  *"
+	echo " *  Virtual disks on LVM or ZFS storages may become inaccessible  *"
 	echo " *        and should be moved to the new VMID manually.           *"
 	echo " ******************************************************************"
 	exit 0
