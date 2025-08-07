@@ -61,7 +61,7 @@ echo "Check VM and VMID preconditions:"
 N=0
 
 ((N++))
-echo -n "[#$N] check VM existence: <qm status $VMID_OLD>: "
+echo -n "[$N] check VM existence: <qm status $VMID_OLD>: "
 VM_STATUS=$(qm status "$VMID_OLD" 2>&1);
 RES="$?"
 if [ "$RES" -ne 0 ]; then
@@ -73,7 +73,7 @@ else
 fi
 
 ((N++))
-echo -n "[#$N] check VM status (must be stopped): "
+echo -n "[$N] check VM status (must be stopped): "
 if [ "$VM_STATUS" != "status: stopped" ]; then
 	echo "ERROR, VM $VMID_OLD $VM_STATUS"
 	exit "$(expr 100 + $N)"
@@ -82,7 +82,7 @@ else
 fi
 
 ((N++))
-echo -n "[#$N] check new VMID is available ($VMID_NEW is not in /etc/pve/.vmlist): "
+echo -n "[$N] check new VMID is available ($VMID_NEW is not in /etc/pve/.vmlist): "
 CMD='grep -E "\"'"$VMID_NEW"'\":" /etc/pve/.vmlist 2>&1 | grep -oE "^.+\{.+[^\}]\}" 2>&1'
 VM_STATUS=$(eval $CMD);
 RES="$?"
