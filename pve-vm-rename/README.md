@@ -4,7 +4,7 @@ Bash [script](pve-vm-rename.sh) to rename Proxmox virtual machine (change VMID) 
 
 ## Usage
 
-Basic usage (safe):
+Basic usage (safe execution):
 
 ```shell
 pve-vm-rename.sh <old-vmid> <new-vmid> --exec
@@ -12,17 +12,17 @@ pve-vm-rename.sh <old-vmid> <new-vmid> --exec
 
 Supported modes:
 
-- _dry run_ (safe mode - just makes checks and lists commands to rename);
-- _execute_ (executes all commands to rename VM if all disks' storages are supported, but switches to _dry run_ mode if any unsupported storage found);
-- _forced_ (stays in _execute_ mode even if unsupported storage found).
+- _dry run_: just makes checks and lists commands to rename (safe mode);
+- _execute_: executes all commands to rename VM, but switches to _dry run_ mode if any disk with unsupported storage found;
+- _forced_: executes all commands to rename VM even if disks with unsupported storage found.
 
 Run `pve-vm-rename.sh --help` for more information.
 
 ## Limitations and cautions
 
-- Only RBD(ceph) and DIR storage types are supported.
-- Virtual disks on other storage types like LVM or ZFS should be moved to the new VMID manually (some ideas can be found on this Proxmox forum threads: [Changing VMID of a VM](https://forum.proxmox.com/threads/changing-vmid-of-a-vm.63161) and [How to rename a vm?](https://forum.proxmox.com/threads/how-to-rename-a-vm.9680)).
-- Script in _forced_ mode will change VMID so disks on unsupported storages may become inaccessible for VM.
+- Only RBD(ceph) and DIR storage types are supported;
+- Virtual disks on other storage types like LVM or ZFS should be moved to the new VMID manually _(some ideas can be found on this Proxmox forum threads: [Changing VMID of a VM](https://forum.proxmox.com/threads/changing-vmid-of-a-vm.63161) and [How to rename a vm?](https://forum.proxmox.com/threads/how-to-rename-a-vm.9680))_;
+- Script in _forced_ mode will change VMID so disks on unsupported storages may become inaccessible for renamed VM.
 
 ## Algo
 
