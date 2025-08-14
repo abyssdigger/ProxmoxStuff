@@ -22,11 +22,11 @@ if [ $# -gt 0 ] && ( [ $1 == "-h" ] || [ $1 == "--help" ] ); then
 	echo
 	echo "Help (this one): "$(basename "$0")" -h"
 	echo
-	echo " ******************************************************************"
-	echo " * ATTENTION! Only RBD(ceph) and Dir storage types are supported! *"
-	echo " *  Virtual disks on LVM or ZFS storages may become inaccessible  *"
-	echo " *        and should be moved to the new VMID manually.           *"
-	echo " ******************************************************************"
+	echo "******************************************************************************************"
+	echo "* ATTENTION! Only RBD(ceph), Dir, LVMthin and LVM (untested) storage types are supported *"
+	echo "*        Virtual disks on storages of other types like ZFS, NFS, CIFS, iSCSI etc         *"
+	echo "*         may become inaccessible and should be moved to the new VMID manually.          *"
+	echo "******************************************************************************************"
 	exit 0
 fi
 
@@ -97,29 +97,29 @@ if [ "${#EXECUTOR}" -ne 0 ]; then
 fi
 
 DIRS_TO_RENAME=()
+FILES_TO_RENAME=()
+FILES_TO_UPDATE=()
 COMMAND_LIST=()
 declare -A COMMAND_DESC
-declare -A FILES_TO_RENAME
-declare -A FILES_TO_UPDATE
 
-# Add all files have to be renamed (* is a place to change old VMID)
-FILES_TO_RENAME+=( [Rename firewall config file]="/etc/pve/firewall/*.fw" )
-FILES_TO_RENAME+=( [Rename VM config file]="/etc/pve/qemu-server/*.conf" )
+# Add all files have to be renamed (@ - field separator, * - place to change old VMID)
+FILES_TO_RENAME+=( "Rename firewall config file""@""/etc/pve/firewall/*.fw" )
+FILES_TO_RENAME+=( "Rename VM config file""@""/etc/pve/qemu-server/*.conf" )
 
-# Add commands to replace old VMID to new in config files:
-FILES_TO_UPDATE+=( [VM config - update disk names]="sed -i '/^scsi[0-9]\+: .*:/s/vm-$VMID_OLD\(-disk-\)/vm-$VMID_NEW\1/g' /etc/pve/qemu-server/$VMID_OLD.conf" )
-FILES_TO_UPDATE+=( [VM config - update storage dirs]="sed -i 's/\(^scsi[0-9]\+: .\+:\)$VMID_OLD\//\1$VMID_NEW\//g' /etc/pve/qemu-server/$VMID_OLD.conf" )
-FILES_TO_UPDATE+=( [Backup jobs - update VM names]="sed -i '/^[[:space:]]\(vmid \|exclude \)/s/\([ ,]\)$VMID_OLD\(,\|$\)/\1$VMID_NEW\2/g' /etc/pve/jobs.cfg" )
-FILES_TO_UPDATE+=( [(untested) Replication - update VM names]="sed -i '/^.\+: $VMID_OLD-[0-9]\+$/s/\(: \)$VMID_OLD\(-[0-9]\+$\)/\1$VMID_NEW\2/p' /etc/pve/replication.cfg" )
-FILES_TO_UPDATE+=( [Pool members - update VM names]="sed -i '/^pool:.*/s/\([:,]\)$VMID_OLD\([:,]\)/\1$VMID_NEW\2/g' /etc/pve/user.cfg")
-FILES_TO_UPDATE+=( [HA config - update VM names]="sed -i 's/\(^vm: \)$VMID_OLD/\1$VMID_NEW/g' /etc/pve/ha/resources.cfg")
+# Add commands to replace old VMID to new in config files (@ - field separator):
+FILES_TO_UPDATE+=( "VM config - update disk names""@""/etc/pve/qemu-server/$VMID_OLD.conf""@""/^scsi[0-9]\+: .*:/s/\(base\|vm\)-$VMID_OLD\(-disk-\)/\1-$VMID_NEW\2/g")
+FILES_TO_UPDATE+=( "VM config - update storage dirs""@""/etc/pve/qemu-server/$VMID_OLD.conf""@""s/\(^scsi[0-9]\+: .\+:\)$VMID_OLD\//\1$VMID_NEW\//g" )
+FILES_TO_UPDATE+=( "Backup jobs - update VM names""@""/etc/pve/jobs.cfg""@""/^[[:space:]]\(vmid \|exclude \)/s/\([ ,]\)$VMID_OLD\(,\|$\)/\1$VMID_NEW\2/g" )
+FILES_TO_UPDATE+=( "(untested) Replication - update VM names""@""/etc/pve/replication.cfg""@""/^.\+: $VMID_OLD-[0-9]\+$/s/\(: \)$VMID_OLD\(-[0-9]\+$\)/\1$VMID_NEW\2/p" )
+FILES_TO_UPDATE+=( "Pool members - update VM names""@""/etc/pve/user.cfg""@""/^pool:.*/s/\([:,]\)$VMID_OLD\([:,]\)/\1$VMID_NEW\2/g")
+FILES_TO_UPDATE+=( "HA config - update VM name""@""/etc/pve/ha/resources.cfg""@""s/\(^vm: \)$VMID_OLD/\1$VMID_NEW/g")
 
 echo "---------------------------------------------------------------------------------------"
 echo "Parse /etc/pve/qemu-server/$VMID_OLD.conf for virtual disks:"
 
 RES_TOTAL=0
 
-# Get all scsi drives for further rename (CEPH/files only! LVM is not implemented!)
+# Get all scsi drives for further rename (rbd/dir/lvm/lvmthin only! Other storage types are not implemented!)
 while read -r line ; do
 	#echo "> $line"
 	NAME=$( echo "$line" | awk -F': ' '{print $1}')
@@ -135,6 +135,13 @@ while read -r line ; do
 		DIVIDER=" "
 		NEWNAME="${DATA[1]/$VMID_OLD/$VMID_NEW}"
 		COMMAND="rbd mv -p"
+	elif [ "$STOR_TYPE" == "lvmthin" ] || [ "$STOR_TYPE" == "lvm" ]; then ### LVM IS UNTESTED!!!
+		LOOKUP="vgname: "
+		PLACE=$(echo "$STOR_DATA" | grep -E "^$LOOKUP")
+		PLACE="${PLACE#$LOOKUP}"
+		DIVIDER=" "
+		NEWNAME="${DATA[1]/$VMID_OLD/$VMID_NEW}"
+		COMMAND="lvrename"
 	elif [ "$STOR_TYPE" == "dir" ]; then
 		LOOKUP="path: "
 		PLACE=$(echo "$STOR_DATA" | grep -E "^$LOOKUP")
@@ -149,7 +156,7 @@ while read -r line ; do
 		#NEWNAME="$PLACE$DIVIDER$VMID_OLD${FILENAME/$VMID_OLD/$VMID_NEW}"
 		COMMAND="mv -f"
 	else
-		PLACE="UNKNOWN STORAGE TYPE"
+		PLACE="UNKNOWN STORAGE TYPE $STOR_TYPE"
 		DIVIDER=" FOR "
 		NEWNAME=""
 		COMMAND="echo '*** CHANGE DISK STORAGE MANUALLY ***'; exit 1 #"
@@ -163,26 +170,30 @@ while read -r line ; do
 	COMMAND_DESC+=( ["$COMMAND_TO_EXEC"]="Rename virtual disk $NAME [$STOR_TYPE:${DATA[0]}]" )
 
 	echo "[$STOR_TYPE:$PLACE]."
-done < <(grep -oE "^scsi[0-9]+: .*:($VMID_OLD\/)?vm-$VMID_OLD-disk-[0-9]+(\.(qcow2|raw|vmdk))?" /etc/pve/qemu-server/"$VMID_OLD".conf)
+done < <(grep -oE "^scsi[0-9]+: .*:($VMID_OLD\/)?(vm|base)-$VMID_OLD-disk-[0-9]+(\.(qcow2|raw|vmdk))?" /etc/pve/qemu-server/"$VMID_OLD".conf)
 
 echo "---------------------------------------------------------------------------------------"
 echo "Prepare command list to execute:"
 echo -n "> commands to update VMID in config files... "
-for each in "${!FILES_TO_UPDATE[@]}"; do
-	COMMAND="${FILES_TO_UPDATE[$each]}"
-	COMMAND_LIST+=( "$COMMAND" )
-	COMMAND_DESC+=( ["$COMMAND"]="$each" )
+for each in "${FILES_TO_UPDATE[@]}"; do
+	IFS="@" read  -r -a DATA <<< "${each}"
+	if [ -f "${DATA[1]}" ]; then
+		COMMAND="sed -i '${DATA[2]}' ${DATA[1]}"
+		COMMAND_LIST+=(  "$COMMAND" )
+		COMMAND_DESC+=( ["$COMMAND"]="${DATA[0]} in ${DATA[1]}" )
+	fi
 done
 echo "OK."
 
 echo -n "> commands to rename VM files... "
-for each in "${!FILES_TO_RENAME[@]}"; do
-	FILE_OLD="${FILES_TO_RENAME[$each]/\*/$VMID_OLD}"
-	FILE_NEW="${FILES_TO_RENAME[$each]/\*/$VMID_NEW}"
+for each in "${FILES_TO_RENAME[@]}"; do
+	IFS="@" read  -r -a DATA <<< "${each}"
+	FILE_OLD="${DATA[1]/\*/$VMID_OLD}"
+	FILE_NEW="${DATA[1]/\*/$VMID_NEW}"
 	if [ -f "$FILE_OLD" ]; then
 		COMMAND="mv -f $FILE_OLD $FILE_NEW"
-		COMMAND_LIST+=( "$COMMAND" )
-		COMMAND_DESC+=( ["$COMMAND"]="$each $FILE_OLD" )
+		COMMAND_LIST+=(  "$COMMAND" )
+		COMMAND_DESC+=( ["$COMMAND"]="${DATA[0]} $FILE_OLD" )
 	fi
 done
 echo "OK."
