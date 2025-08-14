@@ -23,8 +23,8 @@ if [ $# -gt 0 ] && ( [ $1 == "-h" ] || [ $1 == "--help" ] ); then
 	echo "Help (this one): "$(basename "$0")" -h"
 	echo
 	echo "******************************************************************************************"
-	echo "* ATTENTION! Only RBD(ceph), Dir, LVMthin and LVM (untested) storage types are supported *"
-	echo "*        Virtual disks on storages of other types like ZFS, NFS, CIFS, iSCSI etc         *"
+	echo "*ATTENTION! Only RBD(ceph), Dir, LVM Thin and LVM (untested) storage types are supported!*"
+	echo "*      Virtual disks on storages of other types like ZFS, NFS, SMB/CIFS, iSCSI etc       *"
 	echo "*         may become inaccessible and should be moved to the new VMID manually.          *"
 	echo "******************************************************************************************"
 	exit 0
@@ -102,13 +102,15 @@ FILES_TO_UPDATE=()
 COMMAND_LIST=()
 declare -A COMMAND_DESC
 
+DEVTYPES="scsi|efidisk|ide|sata|virtio"
+
 # Add all files have to be renamed (@ - field separator, * - place to change old VMID)
 FILES_TO_RENAME+=( "Rename firewall config file""@""/etc/pve/firewall/*.fw" )
 FILES_TO_RENAME+=( "Rename VM config file""@""/etc/pve/qemu-server/*.conf" )
 
 # Add commands to replace old VMID to new in config files (@ - field separator):
-FILES_TO_UPDATE+=( "VM config - update disk names""@""/etc/pve/qemu-server/$VMID_OLD.conf""@""/^scsi[0-9]\+: .*:/s/\(base\|vm\)-$VMID_OLD\(-disk-\)/\1-$VMID_NEW\2/g")
-FILES_TO_UPDATE+=( "VM config - update storage dirs""@""/etc/pve/qemu-server/$VMID_OLD.conf""@""s/\(^scsi[0-9]\+: .\+:\)$VMID_OLD\//\1$VMID_NEW\//g" )
+FILES_TO_UPDATE+=( "VM config - update disk names""@""/etc/pve/qemu-server/$VMID_OLD.conf""@""/^\(${DEVTYPES//|/\\|}\)[0-9]\+: .*:/s/\(base\|vm\)-$VMID_OLD\(-disk-\)/\1-$VMID_NEW\2/g")
+FILES_TO_UPDATE+=( "VM config - update storage dirs""@""/etc/pve/qemu-server/$VMID_OLD.conf""@""s/\(^\(${DEVTYPES//|/\\|}\)[0-9]\+: .\+:\)$VMID_OLD\//\1$VMID_NEW\//g" )
 FILES_TO_UPDATE+=( "Backup jobs - update VM names""@""/etc/pve/jobs.cfg""@""/^[[:space:]]\(vmid \|exclude \)/s/\([ ,]\)$VMID_OLD\(,\|$\)/\1$VMID_NEW\2/g" )
 FILES_TO_UPDATE+=( "(untested) Replication - update VM names""@""/etc/pve/replication.cfg""@""/^.\+: $VMID_OLD-[0-9]\+$/s/\(: \)$VMID_OLD\(-[0-9]\+$\)/\1$VMID_NEW\2/p" )
 FILES_TO_UPDATE+=( "Pool members - update VM names""@""/etc/pve/user.cfg""@""/^pool:.*/s/\([:,]\)$VMID_OLD\([:,]\)/\1$VMID_NEW\2/g")
@@ -170,7 +172,7 @@ while read -r line ; do
 	COMMAND_DESC+=( ["$COMMAND_TO_EXEC"]="Rename virtual disk $NAME [$STOR_TYPE:${DATA[0]}]" )
 
 	echo "[$STOR_TYPE:$PLACE]."
-done < <(grep -oE "^scsi[0-9]+: .*:($VMID_OLD\/)?(vm|base)-$VMID_OLD-disk-[0-9]+(\.(qcow2|raw|vmdk))?" /etc/pve/qemu-server/"$VMID_OLD".conf)
+done < <(grep -oE "^($DEVTYPES)[0-9]+: .*:($VMID_OLD\/)?(vm|base)-$VMID_OLD-disk-[0-9]+(\.(qcow2|raw|vmdk))?" /etc/pve/qemu-server/"$VMID_OLD".conf  | sort | uniq )
 
 echo "---------------------------------------------------------------------------------------"
 echo "Prepare command list to execute:"

@@ -17,5 +17,14 @@
         "todisk",
         "vmlist",
         "vzdump"
+    ],
+    "cSpell.words": [
+        "CIFS",
+        "DEVTYPES",
+        "efidisk",
+        "lvmthin",
+        "lvrename",
+        "vgname",
+        "virtio"
     ]
 }
