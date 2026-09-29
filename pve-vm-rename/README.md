@@ -1,6 +1,7 @@
 # pve-vm-rename.sh
 
 __LVM SNAPSHOTS & LINKED CLONES ARE NOT SUPPORTED!__
+
 Bash [script](pve-vm-rename.sh) to rename Proxmox virtual machine (change VMID) correctly and safely.
 
 ## Usage
