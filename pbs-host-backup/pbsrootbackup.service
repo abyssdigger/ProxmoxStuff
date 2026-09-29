@@ -1,6 +1,5 @@
 [Unit]
 Description="Backup to Proxmox backup server"
-Wants=pbsrootbackup.timer
 
 [Service]
 Type=simple
